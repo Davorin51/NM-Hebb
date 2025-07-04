@@ -1,0 +1,20 @@
+{
+  "seed": 42,              // početni random-seed; svakom run-u se dodaje +run_id
+  "num_runs": 5,           // koliko puta pokrenuti eksperiment
+
+  "phase1": {
+    "epochs": 50,
+    "lr": 0.1,             // startni LR za SGD
+    "weight_decay": 0.0005,
+    "use_swa": true,       // uključi / isključi SWA
+    "patience": 7          // early-stopping patience
+  },
+
+  "phase2": {
+    "epochs": 50,
+    "lr": 0.001,           // manji LR za finetune
+    "weight_decay": 0.0005,
+    "lambda_metric": 0.5,  // težina metric-lossa
+    "margin": 1.0          // margin u contrastive dijelu
+  }
+}
