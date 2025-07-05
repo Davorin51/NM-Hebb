@@ -1,0 +1,23 @@
+{
+  "results_dir": "results_exp_resnet_cifar100",
+  "seed": 42,
+  "batch_size": 128,
+  "num_runs": 1,
+
+  "phase1": {
+    "epochs": 50,
+    "lr": 0.1,
+    "weight_decay": 0.0005,
+    "use_swa": true,
+    "patience": 7
+  },
+
+  "phase2": {
+    "epochs": 50,
+    "lr": 0.001,
+    "weight_decay": 0.0005,
+    "lambda_metric": 0.5,
+    "margin": 1.0,
+    "patience": 7
+  }
+}

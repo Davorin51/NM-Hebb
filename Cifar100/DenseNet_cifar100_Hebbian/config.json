@@ -1,0 +1,26 @@
+{
+  // općenite postavke
+  "results_dir": "results_exp_densenet",
+  "seed": 42,
+  "num_runs": 1,
+  "batch_size": 128,
+
+  // Phase 1 – single-image klasifikacija
+  "phase1": {
+    "epochs":        60,
+    "lr":            0.05,     // početni LR za SGD
+    "weight_decay":  0.0005,
+    "use_swa":       true,
+    "patience":      8         // early-stop patience (val-acc)
+  },
+
+  // Phase 2 – pairwise + metric learning
+  "phase2": {
+    "epochs":        40,
+    "lr":            0.003,    // manji LR za finetune
+    "weight_decay":  0.0005,
+    "lambda_metric": 0.5,      // omjer CE i metric gubitka
+    "margin":        1.0,      // margin u contrastive lossu
+    "patience":      8
+  }
+}

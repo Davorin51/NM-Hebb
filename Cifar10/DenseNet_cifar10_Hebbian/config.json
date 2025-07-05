@@ -1,0 +1,21 @@
+{
+  "seed": 42,
+  "num_runs": 5,
+
+  "phase1": {
+    "epochs": 50,
+    "lr": 0.1,            // DenseNet dobro radi s 0.1 na batch-128
+    "weight_decay": 0.0005,
+    "use_swa": true,
+    "patience": 7
+  },
+
+  "phase2": {
+    "epochs": 50,
+    "lr": 0.001,
+    "weight_decay": 0.0005,
+    "lambda_metric": 0.5,
+    "margin": 1.0,
+    "patience": 7
+  }
+}

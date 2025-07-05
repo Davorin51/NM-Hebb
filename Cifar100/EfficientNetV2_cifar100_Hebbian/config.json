@@ -1,0 +1,24 @@
+{
+  "results_dir": "results_exp_effnetv2",
+  "seed": 42,
+  "num_runs": 1,
+  "batch_size": 160,
+
+  "phase1": {
+    "epochs": 60,
+    "lr": 0.05,
+    "weight_decay": 0.0005,
+    "use_swa": true,
+    "patience": 8
+  },
+
+  "phase2": {
+    "epochs": 50,
+    "lr": 0.001,
+    "weight_decay": 0.0005,
+    "lambda_metric": 0.5,
+    "margin": 1.0,
+    "patience": 8
+  }
+}
+
