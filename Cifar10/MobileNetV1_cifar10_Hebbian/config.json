@@ -4,7 +4,7 @@
 
   "phase1": {
     "epochs": 50,
-    "lr": 0.05,          // MobileNet voli ~0.05 pri batch-128
+    "lr": 0.05,          
     "weight_decay": 0.0005,
     "use_swa": true,
     "patience": 7
