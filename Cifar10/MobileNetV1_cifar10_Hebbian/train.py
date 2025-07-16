@@ -1,6 +1,7 @@
 import os
 import json
 import torch
+import random
 import torch.nn as nn
 import torch.optim as optim
 from torch.optim.swa_utils import AveragedModel, SWALR, update_bn
