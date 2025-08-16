@@ -233,13 +233,22 @@ class Trainer:
             loss += (a_f - w_f).pow(2).sum()
         return loss / conv_layer.out_channels
 
-    def hebbian_update_fc2(self, fc2_layer):
+    def hebbian_update_fc2(self, fc2_layer, epoch=0):
+        # Preskoci Hebbian update prvih 5 epoha
+        if epoch < 5:
+            return
+            
+        # Izračunaj scale factor (25k je bio originalni size)
+        scale = 25_000 / sum(self.classwise_counts)
+        
         for c in range(self.num_classes):
             if self.classwise_counts[c] < 1: continue
             emb_mean = self.classwise_emb_sums[c] / self.classwise_counts[c]
-            dW = 0.0001 * torch.ger(emb_mean, emb_mean)
+            # Skaliraj dW prema veličini dataseta
+            dW = 0.0001 * scale * torch.ger(emb_mean, emb_mean)
             if dW.shape == fc2_layer.weight.data.shape:
                 fc2_layer.weight.data += dW
+                
         self.classwise_emb_sums = [torch.zeros(self.embedding_dim, device=self.device) for _ in range(self.num_classes)]
         self.classwise_counts   = [0 for _ in range(self.num_classes)]
 
@@ -330,8 +339,8 @@ class Trainer:
                 correct      += (logits.argmax(1) == labels).sum().item()
                 total        += data.size(0)
 
-            # Hebbian update of fc2 at epoch end
-            self.hebbian_update_fc2(self.model.fc2)
+            # Hebbian update of fc2 at epoch end (pass epoch number)
+            self.hebbian_update_fc2(self.model.fc2, epoch)
 
             # ── epoch metrics ─────────────────────────────────────────
             train_loss = running_loss / total
@@ -415,10 +424,12 @@ class Trainer:
     def train_pairwise(
             self, pairwise_loader, val_loader=None,
             epochs=50,                     # ← ukupni broj epoha
-            lr=1e-3,                       # ← start-LR za SGD finetune
+            lr=3e-4,                       # ← manji LR za manji dataset
             weight_decay=5e-4,
-            lambda_metric=0.5, margin=1.0,
-            patience=7,                    # ← NOVO: early-stop patience
+            lambda_metric=0.2,             # ← manji početni lambda
+            margin=1.0,
+            warmup_epochs=15,              # ← dulji warmup za metric loss
+            patience=7,
             hist_every=5
     ):
         # ------------------------------------------------------------ #
@@ -429,6 +440,11 @@ class Trainer:
             lr=lr, momentum=0.9, nesterov=True, weight_decay=weight_decay
         )
         scheduler     = CosineAnnealingLR(optimizer, T_max=epochs)
+        
+        # Zamrzni backbone do layer2 za stabilniji trening
+        for name, param in self.model.named_parameters():
+            if any(x in name for x in ['conv1', 'bn1', 'layer1']):
+                param.requires_grad = False
 
         # ------------------------------------------------------------ #
         best_val_acc  = 0.0
@@ -454,13 +470,16 @@ class Trainer:
                 pos    = (dists[same] ** 2).sum() if same.any() else 0.0
                 neg    = (torch.clamp(margin - dists[~same], 0.) ** 2).sum() if (~same).any() else 0.0
                 metric = (pos + neg) / A.size(0)
-
+                
+                # Postupni warmup za metric loss
+                curr_lambda = lambda_metric * min(1.0, epoch / warmup_epochs)
+                
                 hebb   = (
                     self.hebbian_reg_loss_conv2(cA[1], self.model.conv2) +
                     self.hebbian_reg_loss_conv2(cB[1], self.model.conv2)
                 ) / 2
 
-                base   = ce + lambda_metric * metric
+                base   = ce + curr_lambda * metric
                 loss   = base + self.consolidation_loss(base) \
                         + self.lambda_hebb * self.neuromodulator(base) * hebb
                 # ------------------------------------------------------
@@ -649,6 +668,13 @@ def main():
         )
         generate_tsne(model, test_loader_single, run_dir,
                       "tsne_phase1.png", title=f"t-SNE run {run_id} – P1")
+
+        # ─ UČITAJ NAJBOLJI CHECKPOINT PRIJE FAZE 2 ─
+        best_ckpt = os.path.join(run_dir, "best_phase1.pth")
+        model.load_state_dict(torch.load(best_ckpt, map_location=device))
+        log_message("➡️  Učitavam najbolji Phase-1 checkpoint prije kontrastivnog treniranja.")
+
+        trainer.old_params = {n: p.detach().clone() for n, p in model.named_parameters()}
 
         # ─ Phase 2 ─
         trainer.train_pairwise(
