@@ -1,0 +1,22 @@
+{
+  "seed": 42,
+  "num_runs": 1,
+  "data_root": "data/tiny-imagenet-200",
+
+  "phase1": {
+    "epochs": 110,
+    "lr": 0.05,
+    "weight_decay": 0.0005,
+    "use_swa": true,
+    "patience": 12
+  },
+
+  "phase2": {
+    "epochs": 60,
+    "lr": 0.001,
+    "weight_decay": 0.0005,
+    "lambda_metric": 0.35,
+    "margin": 1.2,
+    "patience": 12
+  }
+}

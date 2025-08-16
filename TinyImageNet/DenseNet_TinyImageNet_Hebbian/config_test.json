@@ -1,0 +1,25 @@
+{
+  "results_dir": "results_tinyimagenet_densenet",
+  "seed": 42,
+  "num_runs": 1,
+  "data_root": "data/tiny-imagenet-200",
+  "batch_size": 32,
+
+  "phase1": {
+    "epochs": 60,
+    "lr": 0.025,
+    "weight_decay": 0.0003,
+    "use_swa": true,
+    "patience": 15
+  },
+
+  "phase2": {
+    "epochs": 60,
+    "lr": 0.001,
+    "weight_decay": 0.0003,
+    "lambda_metric": 0.15,
+    "margin": 1.2,
+    "patience": 8,
+    "freeze_stages": 4
+  }
+}
